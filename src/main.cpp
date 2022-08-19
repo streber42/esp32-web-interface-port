@@ -44,6 +44,8 @@
 #include <WebServer.h>
 #include <inverter.h>
 #include <DBG_DEFS.h>
+#include <M5Atom.h>
+
 
 #define VERSION F("1.0-ESP32")
 #define LED_PIN 2
@@ -61,7 +63,7 @@
 char *ssid_STA;
 char *password_STA;
 
-char *ssid_AP = 		(char*)"Inverter Web";
+char *ssid_AP = 		(char*)"esp32inv";
 char *password_AP = 	(char*)"vroomvroom";
 
 wifi_mode_t wifi_mode = WIFI_MODE_NULL;
@@ -257,7 +259,7 @@ void handleFileList(){
   
 
     if(!root){
-        Serial.println("- failed to open directory");
+        (DBG_OUTPUT_PORT).println("- failed to open directory");
         return;
     }
 
@@ -268,7 +270,7 @@ void handleFileList(){
 			output += "{\"type\":\"";
 			output += "file";
 			output += "\",\"name\":\"";
-			output += String(file.name()).substring(1);
+			output += String(file.name());
 			output += "\"}";
         }
 
@@ -371,7 +373,7 @@ void index_FS_files(){
 			file.close();
 			break;
 		}
-		String name = String(file.name());
+		String name = "/" + String(file.name());
 		if(name == SERVER_INDEX) serverIndex = numberOfFiles;
 		files[numberOfFiles++] = name;
         file = root.openNextFile();
@@ -411,7 +413,7 @@ void init_web_server(){
 }
 
 void init_wifi_ap(){
-	static IPAddress local_IP(1,1,1,1);
+	static IPAddress local_IP(192,168,4,1);
 	static IPAddress gateway(192,168,4,1);
 	static IPAddress subnet(255,255,255,0);
 	WiFi.mode(WIFI_MODE_AP);
@@ -466,7 +468,9 @@ void task_system_health(void *){
 	bool ledState = false;
 	for(;;){
 		ledState = !ledState;
-		digitalWrite(LED_PIN, ledState);
+		M5.dis.drawpix(0, ledState ? 0x00ff00 : 0x000000);
+		// digitalWrite(LED_PIN, ledState);
+		// (DBG_OUTPUT_PORT).println("blink");
 		if(wifi_mode == WIFI_MODE_STA && WiFi.status() != WL_CONNECTED){
 			(DBG_OUTPUT_PORT).println("WiFi: Lost connection to AP!\nSwitching to softAP mode.");
 			init_wifi_ap();
@@ -476,8 +480,13 @@ void task_system_health(void *){
 }
 
 void setup(){
-	(DBG_OUTPUT_PORT).begin(DBG_OUTPUT_BAUD);
-	pinMode(LED_PIN, OUTPUT);
+	M5.begin(true,false,true);
+	delay(50);
+	M5.dis.drawpix(0, 0x0000ff);
+    // Serial2.begin(115200, SERIAL_8N2, 22, 19);
+	// Serial2.println("hello inverter");
+	// (DBG_OUTPUT_PORT).begin(DBG_OUTPUT_BAUD);
+	// pinMode(LED_PIN, OUTPUT);
 
 	init_SPIFFS();
 
@@ -499,4 +508,6 @@ void setup(){
 	);
 }
 
-void loop(){}
+void loop(){
+	M5.update();
+}

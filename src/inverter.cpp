@@ -70,7 +70,7 @@ static uint32_t crc32(uint32_t* data, uint32_t len, uint32_t crc){
 
 Inverter::Inverter(HardwareSerial& _port){
 	interface = &_port;
-	interface->begin(DEFAULT_BAUD);
+	interface->begin(DEFAULT_BAUD,SERIAL_8N2, 22,19);
 	interface->setRxBufferSize(UART_BUFFER_SIZE);
 }
 
